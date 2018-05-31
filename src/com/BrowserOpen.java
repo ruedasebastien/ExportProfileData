@@ -16,6 +16,10 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.firefox.FirefoxBinary;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
+import org.openqa.selenium.firefox.FirefoxProfile;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -31,7 +35,7 @@ public class BrowserOpen {
 		ConfigFileEncryption ConfigFile = new ConfigFileEncryption();
 		String cytricSystem = ConfigFile.GetKeyValue("cytricSystem");
 
-		WebDriver driver = BrowserOption();
+		WebDriver driver = BrowserOption("Firefox");
 
 		System.out.println("Starting cytric");
 		driver.get(cytricSystem);// launch Fire fox and direct it to the Base URL
@@ -57,6 +61,7 @@ public class BrowserOpen {
 
 		// close Chrome
 		Thread.sleep(10000);
+		System.out.println("Closing Browser");
 		tearDown();
 	}
 
@@ -88,28 +93,51 @@ public class BrowserOpen {
 			elems = driver.findElements(By.xpath(Xpath));
 		}
 		driver.findElement(By.xpath(Xpath)).click();
+		System.out.println("Downloading export file");
 	}
 
-	public static WebDriver BrowserOption() {
 
+	public static WebDriver BrowserOption(String Browser) {
 		String downloadFilepath = getJarPath();
-		HashMap<String, Object> chromePrefs = new HashMap<String, Object>();
-		chromePrefs.put("profile.default_content_settings.popups", 0);
-		chromePrefs.put("download.default_directory", downloadFilepath);
-		ChromeOptions options = new ChromeOptions();
+		
+		if (Browser == "Chrome") {
+				HashMap<String, Object> chromePrefs = new HashMap<String, Object>();
+				chromePrefs.put("profile.default_content_settings.popups", 0);
+				chromePrefs.put("download.default_directory", downloadFilepath);
+				ChromeOptions options = new ChromeOptions();
 
-		options.setExperimentalOption("prefs", chromePrefs);
-		// options.setHeadless(true);
-		//options.addArguments("--headless");
+				options.setExperimentalOption("prefs", chromePrefs);
+				// options.setHeadless(true);
+				//options.addArguments("--headless");
 
-		DesiredCapabilities cap = DesiredCapabilities.chrome();
-		cap.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
-		cap.setCapability(ChromeOptions.CAPABILITY, options);
+				DesiredCapabilities cap = DesiredCapabilities.chrome();
+				cap.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
+				cap.setCapability(ChromeOptions.CAPABILITY, options);
 
-		// declaration and instantiation of objects/variables
-		System.setProperty("webdriver.chrome.driver", downloadFilepath + "\\chromedriver.exe");
-		WebDriver driver = new ChromeDriver(cap);
-
+				// declaration and instantiation of objects/variables
+				System.setProperty("webdriver.chrome.driver", downloadFilepath + "\\chromedriver.exe");
+			    //System.setProperty("webdriver.chrome.driver", Thread.currentThread().getContextClassLoader().getResource(downloadFilepath + "\\chromedriver.exe").getFile());
+				driver = new ChromeDriver(options);
+		
+		}else if (Browser == "Firefox"){
+		    //Create FireFox Profile object
+			System.setProperty("webdriver.gecko.driver", downloadFilepath + "\\geckodriver.exe");
+			FirefoxProfile profile = new FirefoxProfile();
+		    FirefoxBinary firefoxBinary = new FirefoxBinary();
+		    //firefoxBinary.addCommandLineOptions("--headless");
+	 
+			profile.setPreference("browser.download.dir", downloadFilepath);//Set Location to store files after downloading.
+			profile.setPreference("browser.download.folderList", 2);//Set Location to store files after downloading.
+			profile.setPreference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;"); //Set Preference to not show file download confirmation dialogue using MIME types Of different file extension types.
+			profile.setPreference( "browser.download.manager.showWhenStarting", false );
+			profile.setPreference( "pdfjs.disabled", true );
+	 
+			
+			FirefoxOptions firefoxOptions = new FirefoxOptions();
+		    firefoxOptions.setBinary(firefoxBinary).setProfile(profile);
+			driver = new FirefoxDriver(firefoxOptions);
+		}
+		
 		return driver;
 	}
 
