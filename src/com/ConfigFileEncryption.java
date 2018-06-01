@@ -25,7 +25,7 @@ public class ConfigFileEncryption {
     
     
     public String GetPassword() throws IOException {
-    	String EncryptedPassword = cfg.getProperty("cytricPassword");
+    	String EncryptedPassword = cfg.getProperty("cytricEncryptedPassword");
     	String DecryptedPassword = Decrypt(EncryptedPassword);
     	return DecryptedPassword;
     }
@@ -48,9 +48,7 @@ public class ConfigFileEncryption {
 		return textEncryptor;
     }
     
-    
 
-    
     /*public void Encryptpassword(String cytricPassword) throws IOException {
     	ReadConfig cfg = new ReadConfig();
     	String PlainText = cfg.getProperty(cytricPassword);

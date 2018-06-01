@@ -1,7 +1,10 @@
 package com;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.util.ArrayList;
 import java.util.Properties;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,7 +14,7 @@ public class ReadConfig {
 	   static Properties configFile;
 	   InputStream inputStream;
 	   OutputStream outputStream;
-	   static String file = "config.properties";
+	   static String file = "C:\\Users\\srueda\\Desktop\\Daimler Export Tool\\bin\\config.properties";
 	   
 	   public ReadConfig() throws IOException{
 		
@@ -19,7 +22,7 @@ public class ReadConfig {
 		   
 		
 		   try {
-			   inputStream = getClass().getClassLoader().getResourceAsStream(file);
+			   inputStream = new FileInputStream(file);
 			   System.out.println(inputStream);
 				if (inputStream != null) {
 					configFile.load(inputStream);
@@ -42,15 +45,21 @@ public class ReadConfig {
 	   
 
 
-	/*public static void SaveFile(String encryptedpassword) throws IOException {
+	public static void UpdateJarStatus(String JarSatus) throws IOException {
 	    try {
-		   OutputStream f = new FileOutputStream(file);
-		   configFile.save(f, encryptedpassword);
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		   //OutputStream f = new FileOutputStream(file);
+		   
+		   configFile.setProperty("JarStatus", JarSatus);
+		   FileWriter writer = new FileWriter(file);
+		
+		   configFile.store(writer, "host settings");
+		   writer.close();
+		} catch (FileNotFoundException ex) {
+		    // file does not exist
+		} catch (IOException ex) {
+		    // I/O error
 		}
 		
-	}*/
+	}
 	
 }

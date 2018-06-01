@@ -26,6 +26,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import com.ConfigFileEncryption;
+import com.ReadConfig;
 
 public class BrowserOpen {
 	private static WebDriver driver;
@@ -37,31 +38,31 @@ public class BrowserOpen {
 
 		WebDriver driver = BrowserOption("Firefox");
 
-		System.out.println("Starting cytric");
+		ReadConfig.UpdateJarStatus("Starting cytric");
 		driver.get(cytricSystem);// launch Fire fox and direct it to the Base URL
 		// waitforlogin(cytricSystem);
 		LogInCytric(cytricSystem, ConfigFile);
-		System.out.println("Accessing system");
+		ReadConfig.UpdateJarStatus("Accessing system");
 
-		System.out.println("Starting csv Export");
+		ReadConfig.UpdateJarStatus("Starting csv Export");
 		GoToPath("//a[text()='Management']");
 		GoToPath("//html/body/div/div[2]/header/div/nav/ul/li[2]/ul/li[2]/a");
 		GoToPath("//a[text()='User Administration']");
 		GoToPath("//a[text()='User Data Import and Export']");
 		GoToPath("//a[text()='Export User Data']");
 
-		System.out.println("Change settings");
+		ReadConfig.UpdateJarStatus("Change settings");
 		ChangeSetting();
 
 		GoToPath("//button[@name='btnContinue']");
 		GoToPath("//button[@name='btnCheck']");
 
-		System.out.println("Waiting on the export file");
-		WaitOnCSVFile();
+		ReadConfig.UpdateJarStatus("Waiting on the export file");
+		FindExportFileInfo();
 
 		// close Chrome
 		Thread.sleep(10000);
-		System.out.println("Closing Browser");
+		ReadConfig.UpdateJarStatus("Closing Browser");
 		tearDown();
 	}
 
@@ -72,7 +73,9 @@ public class BrowserOpen {
 	}
 
 	public static void ChangeSetting() throws InterruptedException {
-		// new Select(driver.findElement(By.xpath("//select[@id='location']"))).selectByVisibleText("MitsubishiFuso Truck and Bus Corporation, Kawasaki-shi");
+		// new
+		// Select(driver.findElement(By.xpath("//select[@id='location']"))).selectByVisibleText("MitsubishiFuso
+		// Truck and Bus Corporation, Kawasaki-shi");
 		Uncheck("//input[@name='column_internal_id']");
 		Uncheck("//input[@name='column_external_reference']");
 		Check("//input[@name='column_last_change']");
@@ -80,64 +83,100 @@ public class BrowserOpen {
 		new Select(driver.findElement(By.xpath("//select[@name='column_apis_id']"))).selectByVisibleText("5");
 	}
 
-	public static void WaitOnCSVFile() throws InterruptedException {
-		DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd-HHmm");
+	public static void FindExportFileInfo() throws InterruptedException, IOException {
+		DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd-HH");
 		Date date = new Date();
 
-		String Xpath = "//span[contains(text(), '" + dateFormat.format(date) + "')]";
+		String SpanXpath = "//span[contains(text(), '" + dateFormat.format(date) + "')]";
+		String pXpath = "//p[contains(text(), '" + dateFormat.format(date) + "')]/preceding-sibling::p[@class='title']";
+
+		WaitOnCSVFile(SpanXpath, pXpath);
+		RemoveExportFile(SpanXpath);
+
+	}
+
+	public static void WaitOnCSVFile(String Xpath, String pXpath) throws InterruptedException, IOException {
 
 		List<WebElement> elems = driver.findElements(By.xpath(Xpath));
+
 		while (elems.size() == 0) {
+			GetTitleExport(pXpath);
 			TimeUnit.SECONDS.sleep(10);
 			GoToPath("//input[@name='btnRefresh']");
 			elems = driver.findElements(By.xpath(Xpath));
 		}
 		driver.findElement(By.xpath(Xpath)).click();
-		System.out.println("Downloading export file");
+		ReadConfig.UpdateJarStatus("Downloading export file");
 	}
 
+	public static void GetTitleExport(String Xpath) throws InterruptedException, IOException {
+		String Text = "";
 
+		List<WebElement> elems = driver.findElements(By.xpath(Xpath));
+		for (WebElement elem : elems) {
+			Text = elem.getText();
+		}
+
+		// p[contains(text(), '20180601')]/preceding-sibling::p[@class="title"]
+		// System.out.println(Text);
+		if (Text.contains("(")) {
+			String[] parts = Text.split("(");
+			parts = parts[1].split(")");
+			ReadConfig.UpdateJarStatus("Running Import/Export Jobs: " + parts[0]);
+		} else {
+			ReadConfig.UpdateJarStatus("Pending Import/Export Jobs");
+		}
+
+	}
 	public static WebDriver BrowserOption(String Browser) {
 		String downloadFilepath = getJarPath();
-		
+
 		if (Browser == "Chrome") {
-				HashMap<String, Object> chromePrefs = new HashMap<String, Object>();
-				chromePrefs.put("profile.default_content_settings.popups", 0);
-				chromePrefs.put("download.default_directory", downloadFilepath);
-				ChromeOptions options = new ChromeOptions();
+			HashMap<String, Object> chromePrefs = new HashMap<String, Object>();
+			chromePrefs.put("profile.default_content_settings.popups", 0);
+			chromePrefs.put("download.default_directory", downloadFilepath);
+			ChromeOptions options = new ChromeOptions();
 
-				options.setExperimentalOption("prefs", chromePrefs);
-				// options.setHeadless(true);
-				//options.addArguments("--headless");
+			options.setExperimentalOption("prefs", chromePrefs);
+			// options.setHeadless(true);
+			// options.addArguments("--headless");
 
-				DesiredCapabilities cap = DesiredCapabilities.chrome();
-				cap.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
-				cap.setCapability(ChromeOptions.CAPABILITY, options);
+			DesiredCapabilities cap = DesiredCapabilities.chrome();
+			cap.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
+			cap.setCapability(ChromeOptions.CAPABILITY, options);
 
-				// declaration and instantiation of objects/variables
-				System.setProperty("webdriver.chrome.driver", downloadFilepath + "\\chromedriver.exe");
-			    //System.setProperty("webdriver.chrome.driver", Thread.currentThread().getContextClassLoader().getResource(downloadFilepath + "\\chromedriver.exe").getFile());
-				driver = new ChromeDriver(options);
-		
-		}else if (Browser == "Firefox"){
-		    //Create FireFox Profile object
+			// declaration and instantiation of objects/variables
+			System.setProperty("webdriver.chrome.driver", downloadFilepath + "\\chromedriver.exe");
+			// System.setProperty("webdriver.chrome.driver",
+			// Thread.currentThread().getContextClassLoader().getResource(downloadFilepath +
+			// "\\chromedriver.exe").getFile());
+			driver = new ChromeDriver(options);
+
+		} else if (Browser == "Firefox") {
+			// Create FireFox Profile object
 			System.setProperty("webdriver.gecko.driver", downloadFilepath + "\\geckodriver.exe");
 			FirefoxProfile profile = new FirefoxProfile();
-		    FirefoxBinary firefoxBinary = new FirefoxBinary();
-		    //firefoxBinary.addCommandLineOptions("--headless");
-	 
-			profile.setPreference("browser.download.dir", downloadFilepath);//Set Location to store files after downloading.
-			profile.setPreference("browser.download.folderList", 2);//Set Location to store files after downloading.
-			profile.setPreference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;"); //Set Preference to not show file download confirmation dialogue using MIME types Of different file extension types.
-			profile.setPreference( "browser.download.manager.showWhenStarting", false );
-			profile.setPreference( "pdfjs.disabled", true );
-	 
-			
+			FirefoxBinary firefoxBinary = new FirefoxBinary();
+			// firefoxBinary.addCommandLineOptions("--headless");
+
+			profile.setPreference("browser.download.dir", downloadFilepath);// Set Location to store files after
+																			// downloading.
+			profile.setPreference("browser.download.folderList", 2);// Set Location to store files after downloading.
+			profile.setPreference("browser.helperApps.neverAsk.saveToDisk",
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;"); // Set Preference to not show
+																							// file download
+																							// confirmation dialogue
+																							// using MIME types Of
+																							// different file extension
+																							// types.
+			profile.setPreference("browser.download.manager.showWhenStarting", false);
+			profile.setPreference("pdfjs.disabled", true);
+
 			FirefoxOptions firefoxOptions = new FirefoxOptions();
-		    firefoxOptions.setBinary(firefoxBinary).setProfile(profile);
+			firefoxOptions.setBinary(firefoxBinary).setProfile(profile);
 			driver = new FirefoxDriver(firefoxOptions);
 		}
-		
+
 		return driver;
 	}
 
@@ -188,4 +227,11 @@ public class BrowserOpen {
 			driver.findElement(By.xpath(Xpath + "/following-sibling::i")).click();
 		}
 	}
+
+	public static void RemoveExportFile(String Xpath) {
+		driver.findElement(By.xpath(
+				Xpath + "/parent::a/parent::p/parent::td[@class='setting']/following-sibling::td[@class='remove']/a"))
+				.click();
+	}
+
 }
