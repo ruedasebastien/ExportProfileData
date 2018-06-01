@@ -2,9 +2,7 @@ package com;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.util.ArrayList;
 import java.util.Properties;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,7 +12,9 @@ public class ReadConfig {
 	   static Properties configFile;
 	   InputStream inputStream;
 	   OutputStream outputStream;
-	   static String file = "C:\\Users\\srueda\\Desktop\\Daimler Export Tool\\bin\\config.properties";
+	   static String path = BrowserOpen.getJarPath();
+	   
+	   static String file = path + "\\config.properties";
 	   
 	   public ReadConfig() throws IOException{
 		
