@@ -192,7 +192,7 @@ public class BrowserOpen {
 		try {
 			pathName = URLDecoder.decode(path, "UTF-8");
 			pathName = pathName.substring(1, pathName.lastIndexOf("/"));
-			pathName = "C:\\Users\\srueda\\Desktop\\Daimler Export Tool\\bin";
+			//pathName = "C:\\Users\\srueda\\Desktop\\Daimler Export Tool\\bin";
 
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
