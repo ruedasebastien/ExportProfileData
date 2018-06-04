@@ -30,7 +30,9 @@ import com.ReadConfig;
 
 public class BrowserOpen {
 	private static WebDriver driver;
-
+	static String downloadFilepath = getJarPath();
+	static String CSVName;
+	
 	public static void main(String[] args) throws Exception {
 
 		ConfigFileEncryption ConfigFile = new ConfigFileEncryption();
@@ -46,7 +48,7 @@ public class BrowserOpen {
 
 		ReadConfig.UpdateJarStatus("Starting csv Export");
 		GoToPath("//a[text()='Management']");
-		GoToPath("//html/body/div/div[2]/header/div/nav/ul/li[2]/ul/li[2]/a");
+		GoToPath("//li[@aria-label=\"Management\"]/ul/li[2]/a");
 		GoToPath("//a[text()='User Administration']");
 		GoToPath("//a[text()='User Data Import and Export']");
 		GoToPath("//a[text()='Export User Data']");
@@ -61,7 +63,8 @@ public class BrowserOpen {
 		FindExportFileInfo();
 
 		// close Chrome
-		Thread.sleep(10000);
+		WaitForDowloadedFile(downloadFilepath + "\\" + CSVName);
+
 		ReadConfig.UpdateJarStatus("Closing Browser");
 		tearDown();
 	}
@@ -73,9 +76,9 @@ public class BrowserOpen {
 	}
 
 	public static void ChangeSetting() throws InterruptedException {
-		// new
-		// Select(driver.findElement(By.xpath("//select[@id='location']"))).selectByVisibleText("MitsubishiFuso
-		// Truck and Bus Corporation, Kawasaki-shi");
+		WaitFor("//select[@id='location']");
+		
+		new Select(driver.findElement(By.xpath("//select[@id='location']"))).selectByVisibleText("Mitsubishi Fuso Truck and Bus Corporation, Kawasaki-shi");
 		Uncheck("//input[@name='column_internal_id']");
 		Uncheck("//input[@name='column_external_reference']");
 		Check("//input[@name='column_last_change']");
@@ -90,7 +93,9 @@ public class BrowserOpen {
 		String SpanXpath = "//span[contains(text(), '" + dateFormat.format(date) + "')]";
 		String pXpath = "//p[contains(text(), '" + dateFormat.format(date) + "')]/preceding-sibling::p[@class='title']";
 
+		
 		WaitOnCSVFile(SpanXpath, pXpath);
+		CSVName = GetCSVName(SpanXpath);
 		RemoveExportFile(SpanXpath);
 
 	}
@@ -111,26 +116,23 @@ public class BrowserOpen {
 
 	public static void GetTitleExport(String Xpath) throws InterruptedException, IOException {
 		String Text = "";
-
+		WaitFor(Xpath);
+		
 		List<WebElement> elems = driver.findElements(By.xpath(Xpath));
 		for (WebElement elem : elems) {
 			Text = elem.getText();
 		}
-
-		// p[contains(text(), '20180601')]/preceding-sibling::p[@class="title"]
-		// System.out.println(Text);
-		if (Text.contains("(")) {
-			String[] parts = Text.split("(");
-			parts = parts[1].split(")");
-			ReadConfig.UpdateJarStatus("Running Import/Export Jobs: " + parts[0]);
+		if (Text.contains("/")) {
+			String result =Text.substring(Text.indexOf("(") + 1, Text.indexOf(")"));
+			ReadConfig.UpdateJarStatus("Running Import/Export Jobs: " + result);
 		} else {
 			ReadConfig.UpdateJarStatus("Pending Import/Export Jobs");
 		}
 
 	}
+	
 	public static WebDriver BrowserOption(String Browser) {
-		String downloadFilepath = getJarPath();
-
+				
 		if (Browser == "Chrome") {
 			HashMap<String, Object> chromePrefs = new HashMap<String, Object>();
 			chromePrefs.put("profile.default_content_settings.popups", 0);
@@ -162,14 +164,8 @@ public class BrowserOpen {
 			profile.setPreference("browser.download.dir", downloadFilepath);// Set Location to store files after
 																			// downloading.
 			profile.setPreference("browser.download.folderList", 2);// Set Location to store files after downloading.
-			profile.setPreference("browser.helperApps.neverAsk.saveToDisk",
-					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;"); // Set Preference to not show
-																							// file download
-																							// confirmation dialogue
-																							// using MIME types Of
-																							// different file extension
-																							// types.
-			profile.setPreference("browser.download.manager.showWhenStarting", false);
+			profile.setPreference("browser.helperApps.alwaysAsk.force", false); // Set Preference to not show
+			profile.setPreference("browser.helperApps.neverAsk.saveToDisk", "text/csv; charset=UTF-16LE");
 			profile.setPreference("pdfjs.disabled", true);
 
 			FirefoxOptions firefoxOptions = new FirefoxOptions();
@@ -181,8 +177,8 @@ public class BrowserOpen {
 	}
 
 	public static void tearDown() throws Exception {
-		driver.close();
 		driver.quit();
+		//driver.close();
 	}
 
 	public static String getJarPath() {
@@ -192,7 +188,7 @@ public class BrowserOpen {
 		try {
 			pathName = URLDecoder.decode(path, "UTF-8");
 			pathName = pathName.substring(1, pathName.lastIndexOf("/"));
-			//pathName = "C:\\Users\\srueda\\Desktop\\Daimler Export Tool\\bin";
+			pathName = "C:\\Users\\srueda\\Desktop\\Daimler Export Tool\\bin";
 
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
@@ -228,10 +224,31 @@ public class BrowserOpen {
 		}
 	}
 
-	public static void RemoveExportFile(String Xpath) {
-		driver.findElement(By.xpath(
-				Xpath + "/parent::a/parent::p/parent::td[@class='setting']/following-sibling::td[@class='remove']/a"))
-				.click();
+	public static void RemoveExportFile(String Xpath) throws InterruptedException {
+		String newXpath = Xpath + "/parent::a/parent::p/parent::td[@class='setting']/following-sibling::td[@class='remove']/a/img";
+		WaitFor(newXpath);
+		System.out.println(newXpath);
+		WaitFor(newXpath);
+		driver.findElement(By.xpath(newXpath)).click();
 	}
 
+	public static void WaitForDowloadedFile(String path) throws InterruptedException {
+		java.io.File File = new java.io.File(path);
+		System.out.println(path);
+		
+		while( !File.exists() ){
+		  Thread.sleep(1000); //sleep for 2 seconds.. MUST DO THIS
+		}
+	}
+	
+	public static String GetCSVName(String Xpath) throws InterruptedException {
+		String Text = "";
+		WaitFor(Xpath);
+		
+		List<WebElement> elems = driver.findElements(By.xpath(Xpath));
+		for (WebElement elem : elems) {
+			Text = elem.getText();
+		}
+		return Text;	
+	}
 }

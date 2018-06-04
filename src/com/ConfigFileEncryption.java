@@ -16,6 +16,7 @@ public class ConfigFileEncryption {
     public ConfigFileEncryption() throws IOException {
     	//cytricPassword= GetPassword();
     	cfg = new ReadConfig();
+    	//Encryptpassword(" fwef");
     }
    
     public String GetKeyValue(String key) throws IOException {
@@ -51,12 +52,9 @@ public class ConfigFileEncryption {
 
     /*public void Encryptpassword(String cytricPassword) throws IOException {
     	ReadConfig cfg = new ReadConfig();
-    	String PlainText = cfg.getProperty(cytricPassword);
-    	String Encryptedpassword = Encrypt("Amadeus2");
+    	String Encryptedpassword = Encrypt("Amadeus01!");
     	System.out.println(Encryptedpassword);
-    	configFile.setProperty("cytricPassword", Encryptedpassword);
-    	
-    	ReadConfig.SaveFile(Encryptedpassword); 
-    }*/
-    
+    	    	
+    }
+    */
 }

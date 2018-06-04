@@ -12,9 +12,10 @@ public class ReadConfig {
 	   static Properties configFile;
 	   InputStream inputStream;
 	   OutputStream outputStream;
-	   static String path = BrowserOpen.getJarPath();
+	   static String pathConfig = BrowserOpen.getJarPath();
 	   
-	   static String file = path + "\\config.properties";
+	   
+	   static String file = pathConfig + "\\config.properties";
 	   
 	   public ReadConfig() throws IOException{
 		
