@@ -1,6 +1,5 @@
 package com;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -9,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.By;
@@ -39,33 +39,34 @@ public class BrowserOpen {
 		String cytricSystem = ConfigFile.GetKeyValue("cytricSystem");
 
 		WebDriver driver = BrowserOption("Firefox");
-
-		ReadConfig.UpdateJarStatus("Starting cytric");
+		ReadConfig.UpdateConfigFile("cytricDownloadFilepath", downloadFilepath);
+		
+		ReadConfig.UpdateConfigFile("JarStatus", "Starting cytric");
 		driver.get(cytricSystem);// launch Fire fox and direct it to the Base URL
 		// waitforlogin(cytricSystem);
 		LogInCytric(cytricSystem, ConfigFile);
-		ReadConfig.UpdateJarStatus("Accessing system");
+		ReadConfig.UpdateConfigFile("JarStatus", "Accessing system");
 
-		ReadConfig.UpdateJarStatus("Starting csv Export");
+		ReadConfig.UpdateConfigFile("JarStatus", "Starting csv Export");
 		GoToPath("//a[text()='Management']");
 		GoToPath("//li[@aria-label=\"Management\"]/ul/li[2]/a");
 		GoToPath("//a[text()='User Administration']");
 		GoToPath("//a[text()='User Data Import and Export']");
 		GoToPath("//a[text()='Export User Data']");
 
-		ReadConfig.UpdateJarStatus("Change settings");
+		ReadConfig.UpdateConfigFile("JarStatus", "Change settings");
 		ChangeSetting();
 
 		GoToPath("//button[@name='btnContinue']");
 		GoToPath("//button[@name='btnCheck']");
 
-		ReadConfig.UpdateJarStatus("Waiting on the export file");
+		ReadConfig.UpdateConfigFile("JarStatus", "Waiting on the export file");
 		FindExportFileInfo();
 
 		// close Chrome
 		WaitForDowloadedFile(downloadFilepath + "\\" + CSVName);
 
-		ReadConfig.UpdateJarStatus("Closing Browser");
+		ReadConfig.UpdateConfigFile("JarStatus", "Closing Browser");
 		tearDown();
 	}
 
@@ -89,7 +90,9 @@ public class BrowserOpen {
 	public static void FindExportFileInfo() throws InterruptedException, IOException {
 		DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd-HH");
 		Date date = new Date();
-
+		
+		dateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Paris"));
+	    
 		String SpanXpath = "//span[contains(text(), '" + dateFormat.format(date) + "')]";
 		String pXpath = "//p[contains(text(), '" + dateFormat.format(date) + "')]/preceding-sibling::p[@class='title']";
 
@@ -111,7 +114,7 @@ public class BrowserOpen {
 			elems = driver.findElements(By.xpath(Xpath));
 		}
 		driver.findElement(By.xpath(Xpath)).click();
-		ReadConfig.UpdateJarStatus("Downloading export file");
+		ReadConfig.UpdateConfigFile("JarStatus", "Downloading export file");
 	}
 
 	public static void GetTitleExport(String Xpath) throws InterruptedException, IOException {
@@ -124,14 +127,14 @@ public class BrowserOpen {
 		}
 		if (Text.contains("/")) {
 			String result =Text.substring(Text.indexOf("(") + 1, Text.indexOf(")"));
-			ReadConfig.UpdateJarStatus("Running Import/Export Jobs: " + result);
+			ReadConfig.UpdateConfigFile("JarStatus", "Running Import/Export Jobs: " + result);
 		} else {
-			ReadConfig.UpdateJarStatus("Pending Import/Export Jobs");
+			ReadConfig.UpdateConfigFile("JarStatus", "Pending Import/Export Jobs");
 		}
 
 	}
 	
-	public static WebDriver BrowserOption(String Browser) {
+	public static WebDriver BrowserOption(String Browser) throws IOException {
 				
 		if (Browser == "Chrome") {
 			HashMap<String, Object> chromePrefs = new HashMap<String, Object>();
@@ -141,7 +144,7 @@ public class BrowserOpen {
 
 			options.setExperimentalOption("prefs", chromePrefs);
 			// options.setHeadless(true);
-			// options.addArguments("--headless");
+			//options.addArguments("--headless");
 
 			DesiredCapabilities cap = DesiredCapabilities.chrome();
 			cap.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
@@ -156,14 +159,15 @@ public class BrowserOpen {
 
 		} else if (Browser == "Firefox") {
 			// Create FireFox Profile object
+			
 			System.setProperty("webdriver.gecko.driver", downloadFilepath + "\\geckodriver.exe");
 			FirefoxProfile profile = new FirefoxProfile();
 			FirefoxBinary firefoxBinary = new FirefoxBinary();
-			// firefoxBinary.addCommandLineOptions("--headless");
+			firefoxBinary.addCommandLineOptions("--headless");
 
-			profile.setPreference("browser.download.dir", downloadFilepath);// Set Location to store files after
-																			// downloading.
+
 			profile.setPreference("browser.download.folderList", 2);// Set Location to store files after downloading.
+			profile.setPreference("browser.download.dir", downloadFilepath);// Set Location to store files after
 			profile.setPreference("browser.helperApps.alwaysAsk.force", false); // Set Preference to not show
 			profile.setPreference("browser.helperApps.neverAsk.saveToDisk", "text/csv; charset=UTF-16LE");
 			profile.setPreference("pdfjs.disabled", true);
@@ -171,6 +175,7 @@ public class BrowserOpen {
 			FirefoxOptions firefoxOptions = new FirefoxOptions();
 			firefoxOptions.setBinary(firefoxBinary).setProfile(profile);
 			driver = new FirefoxDriver(firefoxOptions);
+			
 		}
 
 		return driver;
@@ -187,8 +192,11 @@ public class BrowserOpen {
 
 		try {
 			pathName = URLDecoder.decode(path, "UTF-8");
+			System.out.println(pathName);
 			pathName = pathName.substring(1, pathName.lastIndexOf("/"));
-			pathName = "C:\\Users\\srueda\\Desktop\\Daimler Export Tool\\bin";
+			pathName = pathName.replaceAll("/", "\\\\");
+			System.out.println(pathName);
+			//pathName = "C:\\Users\\srueda\\Desktop\\Daimler Export Tool\\bin";
 
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block

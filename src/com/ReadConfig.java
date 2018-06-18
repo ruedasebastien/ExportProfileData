@@ -46,11 +46,11 @@ public class ReadConfig {
 	   
 
 
-	public static void UpdateJarStatus(String JarSatus) throws IOException {
+	public static void UpdateConfigFile(String prop, String Status) throws IOException {
 	    try {
 		   //OutputStream f = new FileOutputStream(file);
 		   
-		   configFile.setProperty("JarStatus", JarSatus);
+		   configFile.setProperty(prop, Status);
 		   FileWriter writer = new FileWriter(file);
 		
 		   configFile.store(writer, "host settings");
@@ -62,5 +62,4 @@ public class ReadConfig {
 		}
 		
 	}
-	
 }
